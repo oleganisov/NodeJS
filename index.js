@@ -1,4 +1,3 @@
-console.log('index');
 const http = require('http');
 
 const port = process.env.PORT || 3000;
@@ -7,13 +6,16 @@ const duration = process.env.DURATION || 30000;
 
 const httpServer = http.createServer((req, res) => {
   const intervalId = setInterval(() => {
-    console.log('setInterval');
+    const currentTime = new Date().toUTCString();
+    console.log(`current time: ${currentTime}`);
   }, interval);
 
   setTimeout(() => {
+    const endTime = new Date().toUTCString();
+
     clearInterval(intervalId);
-    console.log('end');
-    res.end('Hello Client!');
+    console.log(`request end time: ${endTime}`);
+    res.end(`current time: ${endTime}`);
   }, duration);
 });
 
