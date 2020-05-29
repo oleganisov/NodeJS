@@ -3,7 +3,7 @@ const path = require('path');
 
 const srcDir = process.argv[2];
 const destDir = process.argv[3] || 'collection_sort';
-const delFlag = process.argv[4] || 0; // 0 - don't remove source folder, 1 - remove source folder
+const delFlag = process.argv[4] || '0'; // 0 - don't remove source folder, 1 - remove source folder
 
 if (!srcDir) {
   console.log('Не указан каталог источник');
@@ -26,57 +26,89 @@ const makeDir = (dir) => {
 };
 
 const sortCollect = (dir) => {
-  const files = fs.readdirSync(dir);
-  files.forEach((file) => {
-    const srcPath = path.join(dir, file);
-    const state = fs.statSync(srcPath);
-    if (state.isDirectory()) {
-      sortCollect(srcPath);
+  fs.readdir(dir, (err, files) => {
+    if (err) {
+      console.log(err);
     }
-    if (state.isFile()) {
-      const destPath = path.join(destDir, file[0].toLowerCase());
+    files.forEach((file) => {
+      const srcPath = path.join(dir, file);
+      const state = fs.statSync(srcPath);
+      if (state.isDirectory()) {
+        sortCollect(srcPath);
+      }
+      if (state.isFile()) {
+        const letterIndex = 0;
+        const destPath = path.join(destDir, file[letterIndex].toLowerCase());
 
-      makeDir(destPath);
-      fs.copyFileSync(srcPath, path.join(destPath, file));
-    }
+        makeDir(destPath);
+        fs.copyFile(srcPath, path.join(destPath, file), (err) => {
+          if (err) {
+            return console.log(err);
+          }
+        });
+      }
+    });
   });
 };
 
 const removeSrcFiles = (dir) => {
-  const files = fs.readdirSync(dir);
-  files.forEach((file) => {
-    const srcPath = path.join(dir, file);
-    const state = fs.statSync(srcPath);
-    if (state.isDirectory()) {
-      removeSrcFiles(srcPath);
+  fs.readdir(dir, (err, files) => {
+    if (err) {
+      return console.log(err);
     }
-    if (state.isFile()) {
-      fs.unlinkSync(srcPath);
-    }
+    files.forEach((file) => {
+      const srcPath = path.join(dir, file);
+      const state = fs.statSync(srcPath);
+      if (state.isDirectory()) {
+        removeSrcFiles(srcPath);
+      }
+      if (state.isFile()) {
+        fs.unlink(srcPath, (err) => {
+          if (err) {
+            return console.log(err);
+          }
+        });
+      }
+    });
   });
 };
 
 const removeEmptySrcDir = (dir) => {
+  let folders;
   const isDir = fs.statSync(dir).isDirectory();
   if (!isDir) {
     return;
   }
-  let files = fs.readdirSync(dir);
-  console.log('read: ', dir, files);
-  if (files.length > 0) {
-    files.forEach((file) => {
-      const srcPath = path.join(dir, file);
-      removeEmptySrcDir(srcPath);
-    });
-    // re-evaluate files; after deleting subfolder
-    // we may have parent folder empty now
-    files = fs.readdirSync(dir);
-    console.log('reread: ', dir, files);
-  }
-  if (files.length === 0) {
-    console.log('remove: ', dir);
-    fs.rmdirSync(dir);
-  }
+  fs.readdir(dir, (err, files) => {
+    folders = files;
+    if (err) {
+      return console.log(err);
+    }
+    console.log('read: ', dir, folders);
+    if (folders.length > 0) {
+      folders.forEach((folder) => {
+        const srcPath = path.join(dir, folder);
+        removeEmptySrcDir(srcPath);
+      });
+      // re-evaluate files; after deleting subfolder
+      // we may have parent folder empty now
+      fs.readdir(dir, (err, files) => {
+        if (err) {
+          return console.log(err);
+        }
+        folders = files;
+        console.log('reread: ', dir, folders);
+      });
+    }
+    if (folders.length === 0) {
+      fs.rmdir(dir, (err) => {
+        if (err) {
+          return console.log(err);
+        }
+        console.log('remove: ', dir);
+      });
+    }
+  });
 };
 
 sortCollect(srcDir);
