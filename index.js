@@ -3,7 +3,7 @@ const path = require('path');
 
 const srcDir = process.argv[2];
 const destDir = process.argv[3] || 'collection_sort';
-const delFlag = process.argv[4] || 0; // 0 - don't remove source folder, 1 - remove source folder
+const delFlag = process.argv[4] || '0'; // 0 - don't remove source folder, 1 - remove source folder
 
 if (!srcDir) {
   console.log('Не указан каталог источник');
@@ -16,12 +16,18 @@ if (!fs.existsSync(srcDir)) {
 
 // create root destination folder
 if (!fs.existsSync(destDir)) {
-  fs.mkdirSync(destDir);
+  // fs.mkdirSync(destDir);
+  fs.mkdir(destDir, (err) => {
+    if (err) throw err;
+  });
 }
 // create folder inside collection if not exist
 const makeDir = (dir) => {
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
+    // fs.mkdirSync(dir);
+    fs.mkdir(dir, (err) => {
+      if (err) throw err;
+    });
   }
 };
 
@@ -34,7 +40,8 @@ const sortCollect = (dir) => {
       sortCollect(srcPath);
     }
     if (state.isFile()) {
-      const destPath = path.join(destDir, file[0].toLowerCase());
+      const letterIndex = 0;
+      const destPath = path.join(destDir, file[letterIndex].toLowerCase());
 
       makeDir(destPath);
       fs.copyFileSync(srcPath, path.join(destPath, file));
